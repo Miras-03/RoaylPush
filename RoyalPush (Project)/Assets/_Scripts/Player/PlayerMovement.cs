@@ -1,6 +1,4 @@
 using UnityEngine;
-using Zenject;
-using EnemySpace;
 
 namespace PlayerSpace
 {

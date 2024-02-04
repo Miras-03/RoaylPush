@@ -1,31 +1,42 @@
+using HealthSpace;
+using PlayerSpace;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using EnemySpace;
+using Zenject;
 
 namespace EnemySpace.Attack
 {
     public sealed class EnemyAttack : MonoBehaviour
     {
+        [SerializeField] private Rigidbody rb;
         private Animator anim;
-        private Enemy enemy;
+        private Player player;
+        private AttackAbility currentAttack;
         private PunchAttack punchAttack;
         private CrashAttack crashAttack;
-        private RangedAttack rangedAttack;
-        private Dictionary<int, IAttackAbility> attackabilities = new Dictionary<int, IAttackAbility>();
+        private UppercutAttack rangedAttack;
+        private Dictionary<int, AttackAbility> attackabilities = new Dictionary<int, AttackAbility>();
 
+        [SerializeField] private LayerMask playerMask;
         [SerializeField] private int respiringTime = 5;
         [SerializeField] private int powerGatherTime = 5;
+        private const int discoverDistance = 15;
         private bool isRespiring = false;
+
+        [Inject]
+        public void Construct(Player player)
+        {
+            this.player = player;
+        }
 
         private void Awake()
         {
             anim = GetComponent<Animator>();
-            enemy = GetComponent<Enemy>();
 
-            punchAttack = new PunchAttack(anim);
-            crashAttack = new CrashAttack(anim);
-            rangedAttack = new RangedAttack(anim);
+            punchAttack = new PunchAttack(rb, anim, player);
+            crashAttack = new CrashAttack(rb, anim, player, 20);
+            rangedAttack = new UppercutAttack(rb, anim, player, 20);
         }
 
         private IEnumerator Start()
@@ -47,16 +58,30 @@ namespace EnemySpace.Attack
         private void OnEnable()
         {
             attackabilities.Add(0, punchAttack);
-            attackabilities.Add(1, crashAttack);
-            attackabilities.Add(2, rangedAttack);
+            attackabilities.Add(1, rangedAttack);
+            attackabilities.Add(2, crashAttack);
         }
 
         private void OnDestroy() => attackabilities.Clear();
 
+        private void FixedUpdate() => HitOrAttack();
+
+        private void HitOrAttack()
+        {
+            Vector3 fwd = transform.TransformDirection(Vector3.forward);
+            RaycastHit hit;
+            Vector3 target = new Vector3(transform.position.x, 3, transform.position.z);
+            if (Physics.Raycast(target, fwd, out hit, discoverDistance, playerMask))
+                CheckOrAttack(hit.distance);
+        }
+
+        public void CheckOrAttack(float distance) => currentAttack.CheckOrExecuteAttack(distance);
+
+
         private void SetRandAttackAbility()
         {
             int index = Random.Range(0, attackabilities.Count);
-            enemy.SetAttackAbility(attackabilities[index]);
+            currentAttack = attackabilities[1];
         }
     }
 }

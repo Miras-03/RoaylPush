@@ -1,15 +1,15 @@
 using EnemySpace;
 using HealthSpace;
 using System.Collections.Generic;
-using TMPro;
 using UnityEngine;
+using UnityEngine.UI;
 using Zenject;
 
 namespace PlayerSpace
 {
-    public sealed class Player : MonoBehaviour
+    public sealed class Player : MonoBehaviour, IDieable
     {
-        [SerializeField] private TextMeshProUGUI hpIndicator;
+        [SerializeField] private Slider hpBar;
         private Transform enemyTransform;
         private Rigidbody rb;
         private Animator anim;
@@ -18,7 +18,7 @@ namespace PlayerSpace
         private Health health;
         private List<Rigidbody> bones;
 
-        [SerializeField] private int maxHP = 100;
+        [SerializeField] private int maxHP = 10;
         private Vector3 movementDirection = Vector3.zero;
 
         [Inject]
@@ -32,19 +32,24 @@ namespace PlayerSpace
             playerMovement = new PlayerMovement(rb, transform, enemyTransform);
             playerAnim = new PlayerAnimation(anim);
             health = new Health(maxHP);
-            
         }
 
         private void Start()
         {
-            PushDown(false);
+            PushDown(true);
             ResetRigidbodyProp();
         }
 
         private void OnEnable()
         {
-            health.Add(new PlayerHealthObserver(hpIndicator));
-            SetHealth(5);
+            health.AddHPObserver(new HealthObserver(health, hpBar));
+            health.AddDeathObserver(this);
+        }
+
+        private void OnDestroy()
+        {
+            health.ClearHPObservers();
+            health.RemoveDeathObserver(this);
         }
 
         private void Update()
@@ -55,11 +60,11 @@ namespace PlayerSpace
 
         private void FixedUpdate()
         {
-            playerMovement.MovePlayer(out movementDirection);
-            AnimateMove();
+            /*playerMovement.MovePlayer(out movementDirection);
+            AnimateMove();*/
         }
 
-        public void SetHealth(int takeValue) => health.TakeHealth -= takeValue;
+        public void TakeDamage(int takeValue) => health.TakeHealth -= takeValue;
 
         private void ResetRigidbodyProp()
         {
@@ -69,6 +74,7 @@ namespace PlayerSpace
 
         private void PushDown(bool shouldFall)
         {
+            anim.enabled = !shouldFall;
             foreach (var b in bones)
                 b.isKinematic = !shouldFall;
         }
@@ -78,5 +84,13 @@ namespace PlayerSpace
             playerAnim.Run(Mathf.Abs(movementDirection.z) > 0.1f ? Mathf.Sign(movementDirection.z) : 0f);
             playerAnim.Turn(Input.GetAxis("Horizontal"));
         }
+
+        public void ExecuteDeath()
+        {
+            Destroy(hpBar.gameObject);
+            PushDown(true);
+        }
+
+        public Health Health => health;
     }
 }

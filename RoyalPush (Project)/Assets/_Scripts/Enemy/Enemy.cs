@@ -1,51 +1,51 @@
-using EnemySpace.Attack;
 using HealthSpace;
-using TMPro;
+using PlayerSpace;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.UI;
 using Zenject;
 
 namespace EnemySpace
 {
-    public sealed class Enemy : MonoBehaviour
+    public sealed class Enemy : MonoBehaviour, IDieable
     {
-        private IAttackAbility currentAttack;
-        [SerializeField] private TextMeshProUGUI hpIndicator;
+        [SerializeField] private Slider hpBar;
         private Health health;
-        private Transform playerTransform;
-        private Rigidbody rb;
+        private Animator anim;
+        private List<Rigidbody> bones;
 
         [SerializeField] private int maxHP = 100;
-        private const int distanceToDiscover = 5;
-
-        [Inject]
-        public void Constructor(PlayerSpace.Player player) => playerTransform = player.transform;
 
         private void Awake()
         {
-            rb = GetComponent<Rigidbody>();
+            anim = GetComponent<Animator>();
+            bones = new List<Rigidbody>(GetComponentsInChildren<Rigidbody>());
             health = new Health(maxHP);
         }
 
+        private void Start() => PushDown(false);
+
         private void OnEnable()
         {
-            health.Add(new EnemyHealthObserver(hpIndicator));
+            health.AddHPObserver(new HealthObserver(health, hpBar));
             health.TakeHealth -= 10;
         }
 
-        private void FixedUpdate() => DetectOrAttack();
-
         public void SetHealth(int takeValue) => health.TakeHealth = takeValue;
 
-        public void SetAttackAbility(IAttackAbility attack) => currentAttack = attack;
-
-        private void DetectOrAttack()
+        public void ExecuteDeath()
         {
-            if (IsPlayerDiscovered())
-                Attack();
+            Destroy(hpBar.gameObject);
+            PushDown(true);
         }
 
-        private bool IsPlayerDiscovered() => Vector3.Distance(transform.position, playerTransform.position) < distanceToDiscover;
+        private void PushDown(bool shouldFall)
+        {
+            anim.enabled = !shouldFall;
+            foreach (var b in bones)
+                b.isKinematic = !shouldFall;
+        }
 
-        private void Attack() => currentAttack.ExecuteAttack();
+        public Health Health => health;
     }
 }

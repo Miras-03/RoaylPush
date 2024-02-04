@@ -1,16 +1,21 @@
+using PlayerSpace;
 using UnityEngine;
 
 namespace EnemySpace.Attack
 {
-    public sealed class PunchAttack : IAttackAbility
+    public sealed class PunchAttack : AttackAbility
     {
-        private Animator anim;
+        private const int discoverDistance = 3;
 
-        public PunchAttack(Animator anim) => this.anim = anim;
+        public PunchAttack(Rigidbody rb, Animator anim, Player player, int damageValue = 5) : base(rb, anim, player, damageValue) { }
 
-        public void ExecuteAttack()
+        public override void CheckOrExecuteAttack(float distance)
         {
-            anim.SetTrigger(nameof(PunchAttack));
+            if (!anim.GetBool(nameof(PunchAttack))&&distance<discoverDistance)
+            {
+                player.TakeDamage(damageValue);
+                anim.SetTrigger(nameof(PunchAttack));
+            }
         }
     }
 }

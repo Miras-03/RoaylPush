@@ -1,16 +1,20 @@
 using UnityEngine;
+using PlayerSpace;
 
 namespace EnemySpace.Attack
 {
-    public sealed class CrashAttack : IAttackAbility
+    public sealed class CrashAttack : AttackAbility
     {
-        private Animator anim;
+        public CrashAttack(Rigidbody rb, Animator anim, Player player, int damageValue = 5) : base(rb, anim, player, damageValue) { }
 
-        public CrashAttack(Animator anim) => this.anim = anim;
-
-        public void ExecuteAttack()
+        public override void CheckOrExecuteAttack(float distance)
         {
-            anim.SetTrigger(nameof(CrashAttack));
+            if (!anim.GetBool(nameof(CrashAttack)))
+            {
+                player.TakeDamage(damageValue);
+                anim.SetTrigger(nameof(CrashAttack));
+                rb.AddForce(Vector3.back * 5, ForceMode.Impulse);
+            }
         }
     }
 }
