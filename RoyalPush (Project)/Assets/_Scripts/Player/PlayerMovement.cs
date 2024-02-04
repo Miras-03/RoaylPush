@@ -2,7 +2,7 @@ using UnityEngine;
 using Zenject;
 using EnemySpace;
 
-namespace Player
+namespace PlayerSpace
 {
     public sealed class PlayerMovement
     {

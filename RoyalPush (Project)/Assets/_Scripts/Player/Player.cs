@@ -1,19 +1,24 @@
 using EnemySpace;
+using HealthSpace;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using Zenject;
 
-namespace Player
+namespace PlayerSpace
 {
     public sealed class Player : MonoBehaviour
     {
+        [SerializeField] private TextMeshProUGUI hpIndicator;
         private Transform enemyTransform;
         private Rigidbody rb;
         private Animator anim;
         private PlayerMovement playerMovement;
         private PlayerAnimation playerAnim;
+        private Health health;
         private List<Rigidbody> bones;
 
+        [SerializeField] private int maxHP = 100;
         private Vector3 movementDirection = Vector3.zero;
 
         [Inject]
@@ -26,12 +31,20 @@ namespace Player
             anim = GetComponent<Animator>();
             playerMovement = new PlayerMovement(rb, transform, enemyTransform);
             playerAnim = new PlayerAnimation(anim);
+            health = new Health(maxHP);
+            
         }
 
         private void Start()
         {
             PushDown(false);
             ResetRigidbodyProp();
+        }
+
+        private void OnEnable()
+        {
+            health.Add(new PlayerHealthObserver(hpIndicator));
+            SetHealth(5);
         }
 
         private void Update()
@@ -45,6 +58,8 @@ namespace Player
             playerMovement.MovePlayer(out movementDirection);
             AnimateMove();
         }
+
+        public void SetHealth(int takeValue) => health.TakeHealth -= takeValue;
 
         private void ResetRigidbodyProp()
         {

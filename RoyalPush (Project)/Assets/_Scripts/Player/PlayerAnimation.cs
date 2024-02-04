@@ -1,6 +1,6 @@
 using UnityEngine;
 
-namespace Player
+namespace PlayerSpace
 {
     public sealed class PlayerAnimation
     {
