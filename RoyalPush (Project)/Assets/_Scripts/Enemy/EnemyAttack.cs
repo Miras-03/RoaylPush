@@ -15,7 +15,7 @@ namespace EnemySpace.Attack
         private AttackAbility currentAttack;
         private PunchAttack punchAttack;
         private CrashAttack crashAttack;
-        private UppercutAttack rangedAttack;
+        private UppercutAttack uppercutAttack;
         private Dictionary<int, AttackAbility> attackabilities = new Dictionary<int, AttackAbility>();
 
         [SerializeField] private LayerMask playerMask;
@@ -25,18 +25,15 @@ namespace EnemySpace.Attack
         private bool isRespiring = false;
 
         [Inject]
-        public void Construct(Player player)
-        {
-            this.player = player;
-        }
+        public void Construct(Player player) => this.player = player;
 
         private void Awake()
         {
             anim = GetComponent<Animator>();
 
             punchAttack = new PunchAttack(rb, anim, player);
-            crashAttack = new CrashAttack(rb, anim, player, 20);
-            rangedAttack = new UppercutAttack(rb, anim, player, 20);
+            uppercutAttack = new UppercutAttack(rb, anim, player, damageValue: 20, throwForce: 900);
+            crashAttack = new CrashAttack(rb, anim, player, damageValue: 40, throwForce: 1000);
         }
 
         private IEnumerator Start()
@@ -58,8 +55,10 @@ namespace EnemySpace.Attack
         private void OnEnable()
         {
             attackabilities.Add(0, punchAttack);
-            attackabilities.Add(1, rangedAttack);
+            attackabilities.Add(1, uppercutAttack);
             attackabilities.Add(2, crashAttack);
+
+            player.OnDeath += () => Destroy(this);
         }
 
         private void OnDestroy() => attackabilities.Clear();
@@ -77,11 +76,10 @@ namespace EnemySpace.Attack
 
         public void CheckOrAttack(float distance) => currentAttack.CheckOrExecuteAttack(distance);
 
-
         private void SetRandAttackAbility()
         {
             int index = Random.Range(0, attackabilities.Count);
-            currentAttack = attackabilities[1];
+            currentAttack = attackabilities[2];
         }
     }
 }

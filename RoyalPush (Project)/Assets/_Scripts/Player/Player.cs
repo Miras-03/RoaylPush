@@ -1,5 +1,7 @@
 using EnemySpace;
 using HealthSpace;
+using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
@@ -9,20 +11,30 @@ namespace PlayerSpace
 {
     public sealed class Player : MonoBehaviour, IDieable
     {
+        public Action OnDeath;
         [SerializeField] private Slider hpBar;
         private Transform enemyTransform;
+        private Transform hipsBone;
         private Rigidbody rb;
         private Animator anim;
         private PlayerMovement playerMovement;
         private PlayerAnimation playerAnim;
+        private Enemy enemy;
         private Health health;
         private List<Rigidbody> bones;
 
-        [SerializeField] private int maxHP = 10;
+        [SerializeField] private LayerMask enemyMask;
+        [SerializeField] private int maxHP = 100;
         private Vector3 movementDirection = Vector3.zero;
+        private const int damageValue = 10;
+        private const int discoverDistance = 3;
 
         [Inject]
-        public void Construct(Enemy enemy) => enemyTransform = enemy.transform;
+        public void Construct(Enemy enemy)
+        {
+            this.enemy = enemy;
+            enemyTransform = enemy.transform;
+        }
 
         private void Awake()
         {
@@ -32,12 +44,13 @@ namespace PlayerSpace
             playerMovement = new PlayerMovement(rb, transform, enemyTransform);
             playerAnim = new PlayerAnimation(anim);
             health = new Health(maxHP);
+            hipsBone = anim.GetBoneTransform(HumanBodyBones.Hips);
         }
 
         private void Start()
         {
-            PushDown(true);
-            ResetRigidbodyProp();
+            EnableAnimAndKinematic(true);
+            EnableKinematicOfMainRigidbody(false);
         }
 
         private void OnEnable()
@@ -54,29 +67,30 @@ namespace PlayerSpace
 
         private void Update()
         {
-            if (Input.GetMouseButtonDown(0))
+            bool canPunch = Input.GetMouseButtonDown(0) && !anim.GetBool("Punch");
+            if (canPunch)
+            {
                 anim.SetTrigger("Punch");
+                HitAndAttack();
+            }
         }
 
         private void FixedUpdate()
         {
-            /*playerMovement.MovePlayer(out movementDirection);
-            AnimateMove();*/
+            bool hasConscious = anim.enabled;
+            if (hasConscious)
+            {
+                playerMovement.MovePlayer(out movementDirection);
+                AnimateMove();
+            }
         }
 
-        public void TakeDamage(int takeValue) => health.TakeHealth -= takeValue;
-
-        private void ResetRigidbodyProp()
+        private void HitAndAttack()
         {
-            rb.isKinematic = false;
-            rb.useGravity = false;
-        }
-
-        private void PushDown(bool shouldFall)
-        {
-            anim.enabled = !shouldFall;
-            foreach (var b in bones)
-                b.isKinematic = !shouldFall;
+            Vector3 fwd = transform.TransformDirection(Vector3.forward);
+            Vector3 target = new Vector3(transform.position.x, 3, transform.position.z);
+            if (Physics.Raycast(target, fwd, discoverDistance, enemyMask))
+                enemy.TakeDamage(damageValue);
         }
 
         private void AnimateMove()
@@ -85,10 +99,54 @@ namespace PlayerSpace
             playerAnim.Turn(Input.GetAxis("Horizontal"));
         }
 
+        public void TakeDamage(int damage) => health.TakeHealth -= damage;
+
         public void ExecuteDeath()
         {
+            OnDeath();
             Destroy(hpBar.gameObject);
-            PushDown(true);
+            Throw(500, Vector3.back);
+        }
+
+        public void Throw(int force, Vector3 direction, float timeToGetConscious = -1)
+        {
+            EnableAnimAndKinematic(false);
+            AddForceToBones(force, direction);
+            EnableKinematicOfMainRigidbody(true);
+            if (timeToGetConscious > 0) 
+                StartCoroutine(GetConscious(timeToGetConscious));
+        }
+
+        private IEnumerator GetConscious(float time)
+        {
+            yield return new WaitForSeconds(time);
+            AlignPositionToHips();
+            EnableAnimAndKinematic(true);
+            EnableKinematicOfMainRigidbody(false);
+        }
+
+        private void EnableAnimAndKinematic(bool enabled)
+        {
+            anim.enabled = enabled;
+            foreach (var b in bones)
+                b.isKinematic = enabled;
+        }
+
+        private void EnableKinematicOfMainRigidbody(bool enabled) => rb.isKinematic = enabled;
+
+        private void AddForceToBones(int force, Vector3 direction)
+        {
+            foreach (var b in bones)
+                b.AddForce(direction * force);
+        }
+
+        private void AlignPositionToHips()
+        {
+            Vector3 originalHipsPos = hipsBone.position;
+            transform.position = hipsBone.position;
+            if (Physics.Raycast(transform.position, Vector3.down, out RaycastHit hitInfo))
+                transform.position = new Vector3(transform.position.x, hitInfo.point.y, transform.position.z);
+            hipsBone.position = originalHipsPos;
         }
 
         public Health Health => health;

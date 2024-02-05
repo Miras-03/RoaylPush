@@ -1,19 +1,24 @@
 using PlayerSpace;
+using System.Threading.Tasks;
 using UnityEngine;
 
 namespace EnemySpace.Attack
 {
     public sealed class UppercutAttack : AttackAbility
     {
-        public UppercutAttack(Rigidbody rb, Animator anim, Player player, int damageValue = 5) : base(rb, anim, player, damageValue) { }
+        private const int discoverDistance = 4;
 
-        public override void CheckOrExecuteAttack(float distance)
+        public UppercutAttack(Rigidbody rb, Animator anim, Player player, int damageValue = 5, int throwForce = 1200) : 
+            base(rb, anim, player, damageValue, throwForce ) { }
+
+        public override async void CheckOrExecuteAttack(float distance)
         {
-            if (!anim.GetBool(nameof(UppercutAttack)))
+            if (!anim.GetBool(nameof(UppercutAttack))&&distance < discoverDistance)
             {
-                player.TakeDamage(damageValue);
                 anim.SetTrigger(nameof(UppercutAttack));
-                rb.AddForce(Vector3.back*50, ForceMode.Impulse);
+                await Task.Delay(300);
+                player.TakeDamage(damageValue);
+                player.Throw(throwForce, direction: Vector3.up, timeToGetConscious: 3);
             }
         }
     }

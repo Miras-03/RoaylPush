@@ -42,11 +42,9 @@ namespace HealthSpace
             get => health;
             set
             {
+                health = value;
                 if (health > -1)
-                {
-                    health = value;
                     NotifyToTakeDamage();
-                }
                 else
                 {
                     health = 0;

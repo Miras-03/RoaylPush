@@ -1,9 +1,7 @@
 using HealthSpace;
-using PlayerSpace;
 using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
-using Zenject;
 
 namespace EnemySpace
 {
@@ -14,7 +12,7 @@ namespace EnemySpace
         private Animator anim;
         private List<Rigidbody> bones;
 
-        [SerializeField] private int maxHP = 100;
+        [SerializeField] private int maxHP = 300;
 
         private void Awake()
         {
@@ -28,22 +26,26 @@ namespace EnemySpace
         private void OnEnable()
         {
             health.AddHPObserver(new HealthObserver(health, hpBar));
-            health.TakeHealth -= 10;
+            health.AddDeathObserver(this);
         }
+
+        private void OnDestroy() => health.RemoveDeathObserver(this);
 
         public void SetHealth(int takeValue) => health.TakeHealth = takeValue;
-
-        public void ExecuteDeath()
-        {
-            Destroy(hpBar.gameObject);
-            PushDown(true);
-        }
 
         private void PushDown(bool shouldFall)
         {
             anim.enabled = !shouldFall;
             foreach (var b in bones)
                 b.isKinematic = !shouldFall;
+        }
+
+        public void TakeDamage(int damage) => health.TakeHealth -= damage;
+
+        public void ExecuteDeath()
+        {
+            Destroy(hpBar.gameObject);
+            PushDown(true);
         }
 
         public Health Health => health;

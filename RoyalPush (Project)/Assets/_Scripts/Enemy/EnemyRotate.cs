@@ -4,9 +4,8 @@ using System.Collections;
 using UnityEngine;
 using Zenject;
 
-public sealed class EnemyRotate : MonoBehaviour
+public sealed class EnemyRotate : Rotate
 {
-    private Transform target;
     private Animator anim;
 
     private bool isBreathing = false;
@@ -29,6 +28,8 @@ public sealed class EnemyRotate : MonoBehaviour
             yield return new WaitForSeconds(breathingWaitTime);
         }
     }
+
+    protected override void RotateToward() => transform.LookAt(target);
 
     public bool IsBreathing { get => isBreathing; set => isBreathing = value; }
 }

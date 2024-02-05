@@ -1,22 +1,12 @@
 using EnemySpace;
-using EnemySpace.Attack;
-using System.Collections;
-using UnityEngine;
 using Zenject;
 
-public sealed class PlayerRotate : MonoBehaviour
+public sealed class PlayerRotate : Rotate
 {
-    private Transform target;
-
     [Inject]
     public void Constructor(Enemy enemy) => target = enemy.transform;
 
-    private IEnumerator Start()
-    {
-        while (true)
-        {
-            transform.LookAt(target);
-            yield return new WaitForFixedUpdate();
-        }
-    }
+    private void FixedUpdate() => RotateToward();
+
+    protected override void RotateToward() => transform.LookAt(target);
 }
