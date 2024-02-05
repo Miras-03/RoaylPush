@@ -7,10 +7,10 @@ namespace HealthSpace
         private List<IHealthable> healthObservers = new List<IHealthable>();
         private List<IDieable> deathObservers = new List<IDieable>();
 
-        private int maxHP;
+        private readonly int maxHP;
         private int health;
 
-        public Health(int maxHP = 100)
+        public Health(int maxHP)
         {
             this.maxHP = maxHP;
             health = maxHP;

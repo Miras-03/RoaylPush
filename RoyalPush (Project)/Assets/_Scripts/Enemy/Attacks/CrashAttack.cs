@@ -6,8 +6,14 @@ namespace EnemySpace.Attack
 {
     public sealed class CrashAttack : AttackAbility
     {
-        public CrashAttack(Rigidbody rb, Animator anim, Player player, int damageValue = 5, int throwForce = 1200 ) : 
-            base(rb, anim, player, damageValue, throwForce) { }
+        Transform transform;
+
+        public CrashAttack(Rigidbody rb, Animator anim, Player player, Transform transform, int damageValue = 5, int throwForce = 1200) :
+            base(rb, anim, player, damageValue, throwForce)
+        { 
+            this.transform = transform;
+        }
+
 
         public override async void CheckOrExecuteAttack(float distance)
         {

@@ -33,7 +33,7 @@ namespace EnemySpace.Attack
 
             punchAttack = new PunchAttack(rb, anim, player);
             uppercutAttack = new UppercutAttack(rb, anim, player, damageValue: 20, throwForce: 900);
-            crashAttack = new CrashAttack(rb, anim, player, damageValue: 40, throwForce: 1000);
+            crashAttack = new CrashAttack(rb, anim, player,transform, damageValue: 40, throwForce: 1000);
         }
 
         private IEnumerator Start()

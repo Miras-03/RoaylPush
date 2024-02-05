@@ -14,8 +14,8 @@ namespace EnemySpace.Attack
         {
             if (!anim.GetBool(nameof(PunchAttack))&&distance<discoverDistance)
             {
-                player.TakeDamage(damageValue);
                 anim.SetTrigger(nameof(PunchAttack));
+                player.TakeDamage(damageValue);
             }
         }
     }

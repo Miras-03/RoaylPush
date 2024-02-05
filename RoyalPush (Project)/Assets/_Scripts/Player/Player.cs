@@ -3,6 +3,7 @@ using HealthSpace;
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 using Zenject;
@@ -13,6 +14,8 @@ namespace PlayerSpace
     {
         public Action OnDeath;
         [SerializeField] private Slider hpBar;
+        [SerializeField] private TextMeshProUGUI hpText;
+        [SerializeField] private ParticleSystem punch;
         private Transform enemyTransform;
         private Transform hipsBone;
         private Rigidbody rb;
@@ -28,6 +31,7 @@ namespace PlayerSpace
         private Vector3 movementDirection = Vector3.zero;
         private const int damageValue = 10;
         private const int discoverDistance = 3;
+        private bool hasDied = false;
 
         [Inject]
         public void Construct(Enemy enemy)
@@ -55,7 +59,7 @@ namespace PlayerSpace
 
         private void OnEnable()
         {
-            health.AddHPObserver(new HealthObserver(health, hpBar));
+            health.AddHPObserver(new HealthObserver(health, hpBar, hpText));
             health.AddDeathObserver(this);
         }
 
@@ -99,13 +103,18 @@ namespace PlayerSpace
             playerAnim.Turn(Input.GetAxis("Horizontal"));
         }
 
-        public void TakeDamage(int damage) => health.TakeHealth -= damage;
+        public void TakeDamage(int damage)
+        {
+            health.TakeHealth -= damage;
+            punch.Play();
+        }
 
         public void ExecuteDeath()
         {
-            OnDeath();
+            hasDied = true;
             Destroy(hpBar.gameObject);
-            Throw(500, Vector3.back);
+            Destroy(hpText.gameObject);
+            Throw(800, Vector3.back);
         }
 
         public void Throw(int force, Vector3 direction, float timeToGetConscious = -1)
@@ -113,7 +122,7 @@ namespace PlayerSpace
             EnableAnimAndKinematic(false);
             AddForceToBones(force, direction);
             EnableKinematicOfMainRigidbody(true);
-            if (timeToGetConscious > 0) 
+            if (timeToGetConscious > 0 && !hasDied) 
                 StartCoroutine(GetConscious(timeToGetConscious));
         }
 
